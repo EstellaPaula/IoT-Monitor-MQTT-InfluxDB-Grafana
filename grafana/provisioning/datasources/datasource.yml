@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    database: iot_db
+    user: mqttuser
+    password: mqttpassword
+    url: http://influxdb:8086
+    isDefault: true

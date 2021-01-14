@@ -1,0 +1,76 @@
+version: '3.7'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    hostname: mosquitto
+    ports:
+      - 1883:1883
+    expose:
+      - 9001
+    networks:
+      - mqtt_network
+    volumes:
+      - ./mosquitto.conf:/mosquitto/mosquitto.conf
+    restart: always
+
+  influxdb:
+    image: influxdb:latest
+    hostname: influxdb
+    environment:
+     - INFLUXDB_META_RETENTION_AUTOCREATE=true
+     - INFLUXDB_DATA_MAX_SERIES_PER_DATABASE=0
+     - INFLUXDB_ADMIN_ENABLED=true
+    expose:
+      - 8086
+      - 8083
+    networks:
+      - db_network
+      - front_end_network
+    volumes:
+      - influxdb-data:/data
+      - influxdb-storage:/var/lib/influxdb
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    hostname: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=asistent
+      - GF_SECURITY_ADMIN_PASSWORD=grafanaSPRC2020
+    ports:
+      - 80:3000
+    networks:
+      - front_end_network
+    volumes:
+      - grafana-log:/var/log/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/dashboards/:/etc/grafana/dashboards/
+    restart: always
+
+  adapter:
+    build: ./services
+    image: adapter
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+    depends_on:
+      - mosquitto
+      - influxdb
+    networks:
+      - mqtt_network
+      - db_network
+    restart: always
+
+
+volumes:
+  influxdb-data:
+  influxdb-storage:
+  grafana-log:
+
+networks:
+  mqtt_network:
+  db_network:
+  front_end_network:
+
